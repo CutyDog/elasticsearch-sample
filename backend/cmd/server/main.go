@@ -2,7 +2,10 @@ package main
 
 import (
 	"elasticsearch-sample/backend/graph"
-	"elasticsearch-sample/backend/internal/db"
+	"elasticsearch-sample/backend/internal/domain/repository"
+	"elasticsearch-sample/backend/internal/infrastructure/db"
+	"elasticsearch-sample/backend/internal/infrastructure/es"
+	"elasticsearch-sample/backend/internal/usecase"
 	"log"
 	"net/http"
 	"os"
@@ -24,10 +27,27 @@ func main() {
 		port = defaultPort
 	}
 
+	// Infrastructure初期化
 	db.ConnectDB()
+	esClient, err := es.NewClient()
+	if err != nil {
+		log.Fatalf("Elasticsearch接続失敗 (設定やプラグインを確認してください): %v", err)
+	}
+
+	// Repository初期化
+	articleDBRepo := repository.NewArticleRepository(db.DB)
+	articleSearchRepo := es.NewArticleSearchRepository(esClient)
+
+	// インデックス作成
+	if err := articleSearchRepo.CreateIndex(); err != nil {
+		log.Fatalf("インデックス初期化失敗: %v", err)
+	}
+
+	// Usecase初期化
+	articleUsecase := usecase.NewArticleUsecase(articleDBRepo, articleSearchRepo)
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-		DB: db.DB,
+		ArticleUsecase: articleUsecase,
 	}}))
 
 	srv.AddTransport(transport.Options{})

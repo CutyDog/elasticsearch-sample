@@ -1,9 +1,9 @@
 package graph
 
 import (
-	"gorm.io/gorm"
+	"elasticsearch-sample/backend/internal/usecase"
 )
 
 type Resolver struct {
-	DB *gorm.DB
+	ArticleUsecase *usecase.ArticleUsecase
 }
