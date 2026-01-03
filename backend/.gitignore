@@ -1,3 +1,7 @@
 # Air temporary files
 /tmp/
 tmp/
+
+# Generated binaries
+/migrate
+/rollback
