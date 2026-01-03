@@ -19,5 +19,14 @@ func getMigrations() []*gormigrate.Migration {
 				return tx.Migrator().DropTable(&model.User{})
 			},
 		},
+		{
+			ID: "202601021310_create_articles",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&model.Article{})
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return tx.Migrator().DropTable(&model.Article{})
+			},
+		},
 	}
 }
