@@ -35,6 +35,7 @@ services:
       - DB_NAME=elasticsearch-sample
       - SERVER_PORT=8080
       - SERVER_ENV=development
+      - ES_HOST=http://elasticsearch:9200
     stdin_open: true
     tty: true
   elasticsearch:

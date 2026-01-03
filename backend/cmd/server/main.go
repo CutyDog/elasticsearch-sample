@@ -3,6 +3,7 @@ package main
 import (
 	"elasticsearch-sample/backend/graph"
 	"elasticsearch-sample/backend/internal/infrastructure/db"
+	"elasticsearch-sample/backend/internal/infrastructure/es"
 	"log"
 	"net/http"
 	"os"
@@ -25,9 +26,11 @@ func main() {
 	}
 
 	db.ConnectDB()
+	es.ConnectElasticsearch()
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		DB: db.DB,
+		ES: es.Elasticsearch,
 	}}))
 
 	srv.AddTransport(transport.Options{})
