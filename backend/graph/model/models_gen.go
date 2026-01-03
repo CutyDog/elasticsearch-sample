@@ -2,14 +2,6 @@
 
 package model
 
-type Mutation struct {
-}
-
-type NewTodo struct {
-	Text   string `json:"text"`
-	UserID string `json:"userId"`
-}
-
 type Query struct {
 }
 
