@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "agnivade",
+    "baseform",
     "dbname",
     "gorm",
     "gormigrate",
@@ -9,11 +10,14 @@
     "healthcheck",
     "isready",
     "jinzhu",
+    "kuromoji",
     "mapstructure",
     "memlock",
     "sosodev",
     "sslmode",
+    "typedapi",
     "ulimits",
+    "usecase",
     "vektah",
     "xpack"
   ]

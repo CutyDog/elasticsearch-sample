@@ -1,11 +1,9 @@
 package graph
 
 import (
-	elasticsearch "github.com/elastic/go-elasticsearch/v9"
-	"gorm.io/gorm"
+	"elasticsearch-sample/backend/internal/usecase"
 )
 
 type Resolver struct {
-	DB *gorm.DB
-	ES *elasticsearch.TypedClient
+	ArticleUsecase *usecase.ArticleUsecase
 }

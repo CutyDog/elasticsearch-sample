@@ -39,7 +39,9 @@ services:
     stdin_open: true
     tty: true
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+    build:
+      context: ./elasticsearch
+      dockerfile: Dockerfile
     environment:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
