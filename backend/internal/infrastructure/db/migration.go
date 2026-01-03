@@ -1,7 +1,7 @@
 package db
 
 import (
-	"elasticsearch-sample/backend/internal/model"
+	"elasticsearch-sample/backend/internal/domain/model"
 
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"

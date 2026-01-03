@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"elasticsearch-sample/backend/internal/db"
+	"elasticsearch-sample/backend/internal/infrastructure/db"
 )
 
 func main() {

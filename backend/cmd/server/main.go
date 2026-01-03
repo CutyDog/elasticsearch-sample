@@ -2,7 +2,7 @@ package main
 
 import (
 	"elasticsearch-sample/backend/graph"
-	"elasticsearch-sample/backend/internal/db"
+	"elasticsearch-sample/backend/internal/infrastructure/db"
 	"log"
 	"net/http"
 	"os"
