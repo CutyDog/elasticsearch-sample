@@ -10,8 +10,11 @@
     "isready",
     "jinzhu",
     "mapstructure",
+    "memlock",
     "sosodev",
     "sslmode",
-    "vektah"
+    "ulimits",
+    "vektah",
+    "xpack"
   ]
 }

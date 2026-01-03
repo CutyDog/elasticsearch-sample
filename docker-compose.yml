@@ -25,6 +25,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      elasticsearch:
+        condition: service_started
     environment:
       - DB_HOST=db
       - DB_PORT=5432
@@ -35,5 +37,33 @@ services:
       - SERVER_ENV=development
     stdin_open: true
     tty: true
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ELASTIC_PASSWORD=elastic
+      - xpack.security.enabled=false
+      - xpack.monitoring.collection.enabled=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.2.3
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_PASSWORD=elastic
+      - I18N_LOCALE=ja-JP
+      - xpack.security.enabled=false
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
 volumes:
   postgres_data:
+  es_data:
