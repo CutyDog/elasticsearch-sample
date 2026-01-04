@@ -38,16 +38,11 @@ func main() {
 	articleDBRepo := repository.NewArticleRepository(db.DB)
 	articleSearchRepo := es.NewArticleSearchRepository(esClient)
 
-	// インデックス作成
-	if err := articleSearchRepo.CreateIndex(); err != nil {
-		log.Fatalf("インデックス初期化失敗: %v", err)
-	}
-
 	// Usecase初期化
 	articleUsecase := usecase.NewArticleUsecase(articleDBRepo, articleSearchRepo)
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-		ArticleUsecase: articleUsecase,
+		ArticleUsecase: &articleUsecase,
 	}}))
 
 	srv.AddTransport(transport.Options{})

@@ -6,34 +6,48 @@ import (
 	"elasticsearch-sample/backend/internal/domain/repository"
 )
 
-type ArticleUsecase struct {
+type CreateArticleInput struct {
+	Title   string
+	Content string
+	Status  string
+	UserID  uint
+}
+
+type UpdateArticleInput struct {
+	ArticleID uint
+	Title     *string
+	Content   *string
+	Status    *string
+}
+
+type ArticleUsecase interface {
+	CreateArticle(ctx context.Context, input CreateArticleInput) (*model.Article, error)
+	UpdateArticle(ctx context.Context, input UpdateArticleInput) (*model.Article, error)
+	DeleteArticle(ctx context.Context, articleID uint) error
+
+	ReindexSearchEngine() error
+}
+
+type articleUsecase struct {
 	dbRepo     repository.ArticleRepository
 	searchRepo repository.ArticleSearchRepository
 }
 
-func NewArticleUsecase(
-	dbRepo repository.ArticleRepository,
-	searchRepo repository.ArticleSearchRepository,
-) *ArticleUsecase {
-	return &ArticleUsecase{
+func NewArticleUsecase(dbRepo repository.ArticleRepository, searchRepo repository.ArticleSearchRepository) ArticleUsecase {
+	return &articleUsecase{
 		dbRepo:     dbRepo,
 		searchRepo: searchRepo,
 	}
 }
 
-func (u *ArticleUsecase) CreateArticle(
-	ctx context.Context,
-	title,
-	content string,
-	status string,
-	userID uint,
-) (*model.Article, error) {
+// CreateArticle: 記事作成
+func (u *articleUsecase) CreateArticle(ctx context.Context, input CreateArticleInput) (*model.Article, error) {
 	// DBに記事作成
 	article := &model.Article{
-		Title:   title,
-		Content: content,
-		Status:  status,
-		UserID:  userID,
+		Title:   input.Title,
+		Content: input.Content,
+		Status:  input.Status,
+		UserID:  input.UserID,
 	}
 	createdArticle, err := u.dbRepo.CreateArticle(ctx, article)
 	if err != nil {
@@ -41,10 +55,104 @@ func (u *ArticleUsecase) CreateArticle(
 	}
 
 	// 検索エンジンにインデックス登録
-	err = u.searchRepo.Index(createdArticle)
+	err = u.searchRepo.Index(nil, createdArticle)
 	if err != nil {
 		return nil, err
 	}
 
 	return createdArticle, nil
+}
+
+// UpdateArticle: 記事更新
+func (u *articleUsecase) UpdateArticle(ctx context.Context, input UpdateArticleInput) (*model.Article, error) {
+	article, err := u.dbRepo.GetArticleByID(ctx, int64(input.ArticleID))
+	if err != nil {
+		return nil, err
+	}
+
+	// DBで記事更新
+	hasChanged := false
+	if input.Title != nil {
+		article.Title = *input.Title
+		hasChanged = true
+	}
+	if input.Content != nil {
+		article.Content = *input.Content
+		hasChanged = true
+	}
+	if input.Status != nil {
+		article.Status = *input.Status
+		hasChanged = true
+	}
+
+	if !hasChanged {
+		return article, nil
+	}
+	updatedArticle, err := u.dbRepo.UpdateArticle(ctx, article)
+	if err != nil {
+		return nil, err
+	}
+
+	// 検索エンジンで記事更新
+	err = u.searchRepo.Index(nil, updatedArticle)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedArticle, nil
+}
+
+// DeleteArticle: 記事削除
+func (u *articleUsecase) DeleteArticle(ctx context.Context, articleID uint) error {
+	id := int64(articleID)
+
+	// DBから記事削除
+	err := u.dbRepo.DeleteArticle(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 検索エンジンから記事削除
+	err = u.searchRepo.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ReindexSearchEngine: 検索エンジンのインデックス再構築
+func (u *articleUsecase) ReindexSearchEngine() error {
+	// 新しいインデックスを作成
+	newIndexName, err := u.searchRepo.CreateIndex()
+	if err != nil {
+		return err
+	}
+
+	// 既存のDB記事をすべて取得
+	var page int = 1
+	var pageSize int = 100
+	for {
+		batch, err := u.dbRepo.ListArticles(context.Background(), page, pageSize)
+		if err != nil {
+			return err
+		}
+		if len(batch) == 0 {
+			break
+		}
+
+		// 指定した新しいインデックスに対して一括登録
+		if err := u.searchRepo.BulkIndex(&newIndexName, batch); err != nil {
+			return err
+		}
+		page++
+	}
+
+	// エイリアスを新しいインデックスに切り替え
+	err = u.searchRepo.SwitchAlias(newIndexName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

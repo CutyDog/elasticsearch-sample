@@ -6,12 +6,17 @@ import (
 	"elasticsearch-sample/backend/internal/domain/repository"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/elastic/go-elasticsearch/v9/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v9/typedapi/indices/create"
 	"github.com/elastic/go-elasticsearch/v9/typedapi/types"
+)
+
+const (
+	ArticleIndexName = "articles" // 記事インデックス名(エイリアスとして付与される)
 )
 
 type articleSearchRepo struct {
@@ -21,9 +26,6 @@ type articleSearchRepo struct {
 func NewArticleSearchRepository(client *Client) repository.ArticleSearchRepository {
 	return &articleSearchRepo{client: client}
 }
-
-// 記事固有のインデックス名
-const ArticleIndexName = "articles"
 
 // articleDocument: ESに保存する記事ドキュメントの構造体
 type articleDocument struct {
@@ -75,8 +77,10 @@ func Search(es *Client, req *search.Request) ([]*model.Article, error) {
 }
 
 // CreateIndex: インデックス作成
-func (r *articleSearchRepo) CreateIndex() error {
-	return r.client.CreateIndex(ArticleIndexName, &create.Request{
+func (r *articleSearchRepo) CreateIndex() (string, error) {
+	newIndexName := fmt.Sprintf("article_%s", time.Now().Format("200601021504"))
+
+	err := r.client.CreateIndex(newIndexName, &create.Request{
 		Mappings: &types.TypeMapping{
 			Properties: map[string]types.Property{
 				"id":         types.NewKeywordProperty(),
@@ -88,10 +92,38 @@ func (r *articleSearchRepo) CreateIndex() error {
 			},
 		},
 	})
+	if err != nil {
+		log.Println("❌ インデックス作成失敗:", err)
+	}
+	return newIndexName, err
+}
+
+// DeleteIndex: インデックス削除
+func (r *articleSearchRepo) DeleteIndex(indexName string) error {
+	err := r.client.DeleteIndex(indexName)
+	if err != nil {
+		log.Println("❌ インデックス削除失敗:", err)
+	}
+	return err
+}
+
+// SwitchAlias: エイリアス切り替え
+func (r *articleSearchRepo) SwitchAlias(newIndexName string) error {
+	err := r.client.UpdateAlias(ArticleIndexName, newIndexName)
+	if err != nil {
+		log.Println("❌ エイリアス更新失敗:", err)
+	}
+	return err
 }
 
 // Index: データの保存
-func (r *articleSearchRepo) Index(article *model.Article) error {
+func (r *articleSearchRepo) Index(indexName *string, article *model.Article) error {
+	// インデックス名の指定がなければ、エイリアスが付与されてるインデックスを使用
+	index := ArticleIndexName
+	if indexName != nil {
+		index = *indexName
+	}
+
 	document := articleDocument{
 		Id:        int(article.ID),
 		Title:     article.Title,
@@ -102,9 +134,64 @@ func (r *articleSearchRepo) Index(article *model.Article) error {
 	}
 
 	_, err := r.client.Typed.
-		Index(ArticleIndexName).
+		Index(index).
 		Id(strconv.Itoa(int(article.ID))).
 		Request(document).
+		Do(context.Background())
+
+	return err
+}
+
+// BulkIndex: データの一括保存
+func (r *articleSearchRepo) BulkIndex(indexName *string, articles []*model.Article) error {
+	// インデックス名の指定がなければ、エイリアスが付与されてるインデックスを使用
+	index := ArticleIndexName
+	if indexName != nil {
+		index = *indexName
+	}
+
+	bulkRequest := r.client.Typed.Bulk()
+
+	for _, article := range articles {
+		document := articleDocument{
+			Id:        int(article.ID),
+			Title:     article.Title,
+			Content:   article.Content,
+			Status:    article.Status,
+			CreatedAt: article.CreatedAt.String(),
+			UpdatedAt: article.UpdatedAt.String(),
+		}
+
+		id := strconv.Itoa(int(article.ID))
+		err := bulkRequest.IndexOp(
+			types.IndexOperation{
+				Id_:    &id,
+				Index_: &index,
+			},
+			document,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to add operation: %w", err)
+		}
+	}
+
+	res, err := bulkRequest.Do(context.Background())
+	if err != nil {
+		return fmt.Errorf("bulk request failed: %w", err)
+	}
+
+	if res.Errors {
+		return fmt.Errorf("bulk request had item errors")
+	}
+
+	return nil
+}
+
+// Delete: ドキュメント削除
+func (r *articleSearchRepo) Delete(id int64) error {
+	articleId := strconv.Itoa(int(id))
+	_, err := r.client.Typed.
+		Delete(ArticleIndexName, articleId).
 		Do(context.Background())
 
 	return err
