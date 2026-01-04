@@ -19,10 +19,13 @@ type articleResolver struct{ *Resolver }
 // ========================
 func ToModelArticle(article entity.Article) *model.Article {
 	return &model.Article{
-		ID:      fmt.Sprintf("%d", article.ID),
-		Title:   article.Title,
-		Content: &article.Content,
-		Status:  model.ArticleStatus(article.Status),
+		ID:        fmt.Sprintf("%d", article.ID),
+		Title:     article.Title,
+		Content:   &article.Content,
+		Status:    model.ArticleStatus(article.Status),
+		UserID:    fmt.Sprintf("%d", article.UserID),
+		CreatedAt: article.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: article.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }
 
@@ -160,4 +163,20 @@ func (r *queryResolver) Article(ctx context.Context, id string) (*model.Article,
 	}
 
 	return ToModelArticle(*article), nil
+}
+
+func (r *queryResolver) SearchArticles(ctx context.Context, keyword string) ([]*model.Article, error) {
+	// Usecaseの呼び出し
+	articles, err := r.ArticleUsecase.SearchArticles(ctx, keyword)
+	if err != nil {
+		return nil, err
+	}
+
+	// モデル変換
+	var result []*model.Article
+	for _, article := range articles {
+		result = append(result, ToModelArticle(*article))
+	}
+
+	return result, nil
 }

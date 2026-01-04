@@ -23,6 +23,7 @@ type UpdateArticleInput struct {
 type ArticleUsecase interface {
 	GetArticleByID(ctx context.Context, articleID uint) (*model.Article, error)
 	ListArticles(ctx context.Context, page int, pageSize int) ([]*model.Article, error)
+	SearchArticles(ctx context.Context, keyword string) ([]*model.Article, error)
 
 	CreateArticle(ctx context.Context, input CreateArticleInput) (*model.Article, error)
 	UpdateArticle(ctx context.Context, input UpdateArticleInput) (*model.Article, error)
@@ -57,6 +58,15 @@ func (u *articleUsecase) GetArticleByID(ctx context.Context, articleID uint) (*m
 // ListArticles: 記事一覧取得
 func (u *articleUsecase) ListArticles(ctx context.Context, page int, pageSize int) ([]*model.Article, error) {
 	articles, err := u.dbRepo.ListArticles(ctx, page, pageSize)
+	if err != nil {
+		return nil, err
+	}
+	return articles, nil
+}
+
+// SearchArticles: キーワードで記事検索
+func (u *articleUsecase) SearchArticles(ctx context.Context, keyword string) ([]*model.Article, error) {
+	articles, err := u.searchRepo.SimpleSearch(keyword)
 	if err != nil {
 		return nil, err
 	}

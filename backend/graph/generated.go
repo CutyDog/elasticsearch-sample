@@ -66,9 +66,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Article     func(childComplexity int, id string) int
-		Articles    func(childComplexity int) int
-		CurrentUser func(childComplexity int) int
+		Article        func(childComplexity int, id string) int
+		Articles       func(childComplexity int) int
+		CurrentUser    func(childComplexity int) int
+		SearchArticles func(childComplexity int, query string) int
 	}
 
 	User struct {
@@ -89,6 +90,7 @@ type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
 	Articles(ctx context.Context) ([]*model.Article, error)
 	Article(ctx context.Context, id string) (*model.Article, error)
+	SearchArticles(ctx context.Context, query string) ([]*model.Article, error)
 }
 
 type executableSchema struct {
@@ -216,6 +218,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.CurrentUser(childComplexity), true
+	case "Query.searchArticles":
+		if e.complexity.Query.SearchArticles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_searchArticles_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SearchArticles(childComplexity, args["query"].(string)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -412,6 +425,17 @@ func (ec *executionContext) field_Query_article_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_searchArticles_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "query", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["query"] = arg0
 	return args, nil
 }
 
@@ -1017,6 +1041,65 @@ func (ec *executionContext) fieldContext_Query_article(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_article_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_searchArticles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_searchArticles,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().SearchArticles(ctx, fc.Args["query"].(string))
+		},
+		nil,
+		ec.marshalNArticle2ᚕᚖelasticsearchᚑsampleᚋbackendᚋgraphᚋmodelᚐArticleᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_searchArticles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Article_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Article_title(ctx, field)
+			case "content":
+				return ec.fieldContext_Article_content(ctx, field)
+			case "status":
+				return ec.fieldContext_Article_status(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Article_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Article_updatedAt(ctx, field)
+			case "userID":
+				return ec.fieldContext_Article_userID(ctx, field)
+			case "author":
+				return ec.fieldContext_Article_author(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Article", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_searchArticles_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2969,6 +3052,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_article(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "searchArticles":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_searchArticles(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
