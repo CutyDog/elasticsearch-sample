@@ -1,0 +1,6 @@
+type Query {
+  currentUser: User!
+  articles: [Article!]!
+  article(id: ID!): Article!
+  searchArticles(query: String!): [Article!]!
+}
