@@ -158,8 +158,8 @@ func (r *articleSearchRepo) BulkIndex(indexName *string, articles []*model.Artic
 			Title:     article.Title,
 			Content:   article.Content,
 			Status:    article.Status,
-			CreatedAt: article.CreatedAt.String(),
-			UpdatedAt: article.UpdatedAt.String(),
+			CreatedAt: article.CreatedAt.Format(time.RFC3339),
+			UpdatedAt: article.UpdatedAt.Format(time.RFC3339),
 		}
 
 		id := strconv.Itoa(int(article.ID))
@@ -181,7 +181,19 @@ func (r *articleSearchRepo) BulkIndex(indexName *string, articles []*model.Artic
 	}
 
 	if res.Errors {
-		return fmt.Errorf("bulk request had item errors")
+		errorDetails := ""
+		for _, item := range res.Items {
+			for op, result := range item {
+				if result.Error != nil {
+					errorReason := ""
+					if result.Error.Reason != nil {
+						errorReason = *result.Error.Reason
+					}
+					errorDetails += fmt.Sprintf("Operation: %s, Status: %d, Error: %s\n", op, result.Status, errorReason)
+				}
+			}
+		}
+		return fmt.Errorf("bulk request had item errors:\n%s", errorDetails)
 	}
 
 	return nil

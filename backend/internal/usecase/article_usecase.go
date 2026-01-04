@@ -29,6 +29,8 @@ type ArticleUsecase interface {
 	DeleteArticle(ctx context.Context, articleID uint) error
 
 	ReindexSearchEngine() error
+
+	SeedArticles(userID uint) ([]model.Article, error)
 }
 
 type articleUsecase struct {
@@ -176,4 +178,21 @@ func (u *articleUsecase) ReindexSearchEngine() error {
 	}
 
 	return nil
+}
+
+func (u *articleUsecase) SeedArticles(userID uint) ([]model.Article, error) {
+	var seedArticles []model.Article = []model.Article{
+		{Title: "First Article", Content: "This is the content of the first article.", Status: "published", UserID: userID},
+	}
+
+	var articles []model.Article
+	for _, article := range seedArticles {
+		createdArticle, err := u.dbRepo.CreateArticle(context.Background(), &article)
+		if err != nil {
+			return nil, err
+		}
+
+		articles = append(articles, *createdArticle)
+	}
+	return articles, nil
 }

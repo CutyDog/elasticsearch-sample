@@ -67,7 +67,7 @@ func main() {
 	})
 
 	http.Handle("/", c.Handler(playground.Handler("GraphQL playground", "/query")))
-	http.Handle("/query", c.Handler(srv))
+	http.Handle("/query", graph.AuthMiddleware()(srv))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

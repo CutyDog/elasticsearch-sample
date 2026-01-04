@@ -3,7 +3,6 @@ package graph
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -23,12 +22,12 @@ func AuthMiddleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			// "Bearer 1" の "1" の部分を取得
+			// "Bearer admin123" の "admin123" の部分を取得
 			parts := strings.Split(authHeader, " ")
 			if len(parts) == 2 && parts[0] == "Bearer" {
-				uid, _ := strconv.Atoi(parts[1])
+				uid := parts[1]
 				// Contextに値をセット
-				ctx := context.WithValue(r.Context(), userIDKey, uint(uid))
+				ctx := context.WithValue(r.Context(), userIDKey, uid)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}

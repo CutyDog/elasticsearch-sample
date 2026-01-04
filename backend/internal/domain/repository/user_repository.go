@@ -10,6 +10,8 @@ import (
 type UserRepository interface {
 	GetUserByID(ctx context.Context, id uint) (*model.User, error)
 	GetUserByUID(ctx context.Context, uid string) (*model.User, error)
+
+	CreateUser(ctx context.Context, user *model.User) error
 }
 
 type userRepository struct {
@@ -34,4 +36,11 @@ func (r *userRepository) GetUserByUID(ctx context.Context, uid string) (*model.U
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) CreateUser(ctx context.Context, user *model.User) error {
+	if err := r.db.Create(user).Error; err != nil {
+		return err
+	}
+	return nil
 }
