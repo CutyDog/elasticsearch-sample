@@ -1,0 +1,18 @@
+input CreateArticleInput {
+  title: String!
+  content: String
+}
+
+input PublishArticleInput {
+  id: ID!
+}
+
+input ArchiveArticleInput {
+  id: ID!
+}
+
+type Mutation {
+  createArticle(input: CreateArticleInput!): Article!
+  publishArticle(input: PublishArticleInput!): Article!
+  archiveArticle(input: ArchiveArticleInput!): Article!
+}

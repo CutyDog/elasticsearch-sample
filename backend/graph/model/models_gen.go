@@ -2,17 +2,37 @@
 
 package model
 
+type ArchiveArticleInput struct {
+	ID string `json:"id"`
+}
+
+type Article struct {
+	ID        string        `json:"id"`
+	Title     string        `json:"title"`
+	Content   *string       `json:"content,omitempty"`
+	Status    ArticleStatus `json:"status"`
+	CreatedAt string        `json:"createdAt"`
+	UpdatedAt string        `json:"updatedAt"`
+	UserID    string        `json:"userID"`
+	Author    *User         `json:"author"`
+}
+
+type CreateArticleInput struct {
+	Title   string  `json:"title"`
+	Content *string `json:"content,omitempty"`
+}
+
+type Mutation struct {
+}
+
+type PublishArticleInput struct {
+	ID string `json:"id"`
+}
+
 type Query struct {
 }
 
-type Todo struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
-	Done bool   `json:"done"`
-	User *User  `json:"user"`
-}
-
 type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID  string `json:"id"`
+	UID string `json:"uid"`
 }

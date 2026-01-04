@@ -5,5 +5,6 @@ import (
 )
 
 type Resolver struct {
-	ArticleUsecase *usecase.ArticleUsecase
+	ArticleUsecase usecase.ArticleUsecase
+	UserUsecase    usecase.UserUsecase
 }

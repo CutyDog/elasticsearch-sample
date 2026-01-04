@@ -37,12 +37,15 @@ func main() {
 	// Repository初期化
 	articleDBRepo := repository.NewArticleRepository(db.DB)
 	articleSearchRepo := es.NewArticleSearchRepository(esClient)
+	userDBRepo := repository.NewUserRepository(db.DB)
 
 	// Usecase初期化
 	articleUsecase := usecase.NewArticleUsecase(articleDBRepo, articleSearchRepo)
+	userUsecase := usecase.NewUserUsecase(userDBRepo)
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-		ArticleUsecase: &articleUsecase,
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		ArticleUsecase: articleUsecase,
+		UserUsecase:    userUsecase,
 	}}))
 
 	srv.AddTransport(transport.Options{})

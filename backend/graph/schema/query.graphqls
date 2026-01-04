@@ -1,0 +1,5 @@
+type Query {
+  currentUser: User!
+  articles: [Article!]!
+  article(id: ID!): Article!
+}

@@ -1,11 +1,15 @@
-type Todo {
+type Article {
   id: ID!
-  text: String!
-  done: Boolean!
-  user: User!
+  title: String!
+  content: String
+  status: ArticleStatus!
+  createdAt: String!
+  updatedAt: String!
+  userID: ID!
+  author: User!
 }
 
 type User {
   id: ID!
-  name: String!
+  uid: String!
 }

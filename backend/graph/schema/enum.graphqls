@@ -1,0 +1,5 @@
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
